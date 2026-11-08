@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physics Definitions · Grade 10 Paper 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b14; --panel:#0f1626; --panel2:#141d31; --line:#22304d;
+    --text:#e7ecf7; --muted:#8a97b3; --accent:#5ee1ff; --accent2:#a78bfa;
+    --good:#4ade80; --close:#facc15; --bad:#f87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Space Grotesk',system-ui,sans-serif;color:var(--text);
+    background:radial-gradient(1200px 700px at 20% -10%,#14204a 0%,transparent 60%),
+               radial-gradient(900px 600px at 110% 110%,#2a1650 0%,transparent 55%),var(--bg);
+    min-height:100vh;overflow-x:hidden;
+  }
+  canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+  canvas#fx{position:fixed;inset:0;z-index:50;pointer-events:none}
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:28px 18px 60px}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+  h1{font-size:1.35rem;font-weight:700;letter-spacing:-.01em}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--muted);font-size:.85rem;margin-top:2px}
+  .stats{display:flex;gap:10px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;text-align:center;min-width:64px}
+  .stat b{display:block;font-family:'JetBrains Mono',monospace;font-size:1.1rem}
+  .stat small{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}
+  .stat.streak b{color:var(--close)}
+  .stat.bump{animation:bump .4s ease}
+  @keyframes bump{40%{transform:scale(1.18)}}
+
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:7px 14px;border-radius:999px;
+        font:inherit;font-size:.85rem;cursor:pointer;transition:.2s}
+  .chip:hover{color:var(--text);border-color:#3a4c75}
+  .chip.on{background:linear-gradient(135deg,#1b3a5c,#2c2160);color:var(--text);border-color:var(--accent)}
+
+  .progress{height:6px;background:var(--panel);border-radius:99px;overflow:hidden;margin-bottom:22px;border:1px solid var(--line)}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));
+              transition:width .6s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 12px var(--accent)}
+
+  /* card */
+  .scene{perspective:1400px;margin-bottom:18px}
+  .card{position:relative;display:grid;width:100%;min-height:260px;transform-style:preserve-3d;
+        transition:transform .8s cubic-bezier(.3,1.4,.4,1)}
+  .card.flipped{transform:rotateY(180deg)}
+  .card.enter{animation:enter .55s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes enter{from{opacity:0;transform:translateY(40px) rotateX(-25deg) scale(.92)}to{opacity:1;transform:none}}
+  .card.leave{animation:leave .35s ease-in forwards}
+  .card.flipped.leave{animation:leaveF .35s ease-in forwards}
+  @keyframes leave{to{opacity:0;transform:translateX(-120px) rotate(-8deg)}}
+  @keyframes leaveF{to{opacity:0;transform:rotateY(180deg) translateX(120px) rotate(8deg)}}
+  .face{grid-area:1/1;position:relative;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:22px;
+        padding:30px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+        background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);
+        box-shadow:0 30px 60px -20px #000a,inset 0 1px 0 #ffffff10;overflow:hidden}
+  .face::before{content:"";position:absolute;inset:-1px;border-radius:22px;padding:1px;
+        background:conic-gradient(from var(--ang,0deg),transparent 0 70%,var(--accent) 80%,var(--accent2) 90%,transparent);
+        -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+        animation:spin 6s linear infinite;opacity:.7}
+  @property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+  @keyframes spin{to{--ang:360deg}}
+  .back{transform:rotateY(180deg);justify-content:flex-start;align-items:stretch;text-align:left}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+       background:#5ee1ff14;border:1px solid #5ee1ff33;padding:4px 10px;border-radius:99px;margin-bottom:18px}
+  .term{font-size:clamp(2rem,6vw,3.1rem);font-weight:700;letter-spacing:-.02em;line-height:1.05;
+        background:linear-gradient(120deg,#fff 30%,var(--accent) 70%,var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .prompt{color:var(--muted);margin-top:14px;font-size:.95rem}
+  .hintline{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--close);line-height:1.7;max-width:560px}
+  .hintline .w{display:inline-block;margin-right:.55em;opacity:0;transform:translateY(-8px) scale(.8);animation:pop .3s forwards}
+  .hintline .w i{font-style:normal;color:#facc1555;letter-spacing:.08em}
+  .card.shake{animation:shake .5s}
+  .card.flipped.shake{animation:shakeF .5s}
+  @keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+  @keyframes shakeF{20%,60%{transform:rotateY(180deg) translateX(-10px)}40%,80%{transform:rotateY(180deg) translateX(10px)}}
+
+  .verdict{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .ring{--p:0;--c:var(--good);width:58px;height:58px;border-radius:50%;flex:none;
+        background:conic-gradient(var(--c) calc(var(--p)*1%),#ffffff12 0);display:grid;place-items:center;
+        transition:--p 1s ease}
+  @property --p{syntax:'<number>';inherits:false;initial-value:0}
+  .ring span{width:46px;height:46px;border-radius:50%;background:var(--panel);display:grid;place-items:center;
+             font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600}
+  .verdict h3{font-size:1.2rem}
+  .verdict p{color:var(--muted);font-size:.82rem}
+  .label{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:10px 0 6px}
+  .answer{font-size:1.08rem;line-height:1.6}
+  .answer .w{display:inline-block;opacity:0;transform:translateY(8px);animation:pop .35s forwards;margin-right:.28em}
+  .answer .hit{color:var(--good)}
+  .answer .miss{color:var(--bad);text-decoration:underline wavy #f8717180;text-underline-offset:4px}
+  .answer .soft{color:var(--muted)}
+  @keyframes pop{to{opacity:1;transform:none}}
+  .yours{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:#c9d3ea;background:#00000033;border:1px solid var(--line);
+         border-radius:10px;padding:10px 12px;white-space:pre-wrap;word-break:break-word}
+  .yours .extra{color:var(--close)}
+  .alt{color:var(--muted);font-size:.82rem;margin-top:6px}
+
+  .inputbox{position:relative}
+  textarea{width:100%;min-height:96px;resize:vertical;background:var(--panel);border:1px solid var(--line);color:var(--text);
+           border-radius:16px;padding:16px 18px;font:inherit;font-size:1rem;line-height:1.5;outline:none;transition:.25s}
+  textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px #5ee1ff1f,0 0 30px #5ee1ff22}
+  textarea:disabled{opacity:.55}
+  .row{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .hint{color:var(--muted);font-size:.8rem;margin-right:auto}
+  kbd{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:var(--panel2);border:1px solid var(--line);
+      border-bottom-width:2px;padding:1px 6px;border-radius:5px}
+  button.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:11px 18px;cursor:pointer;transition:.2s}
+  .primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071020}
+  .primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 10px 24px -8px var(--accent)}
+  .ghost{background:var(--panel);color:var(--muted);border:1px solid var(--line)!important}
+  .ghost:hover{color:var(--text)}
+  .hidden{display:none!important}
+
+  .done{text-align:center;padding:40px 20px;background:linear-gradient(160deg,var(--panel2),var(--panel));
+        border:1px solid var(--line);border-radius:22px;animation:enter .6s cubic-bezier(.2,.9,.3,1.2)}
+  .done h2{font-size:2rem;margin-bottom:6px}
+  .done .big{font-family:'JetBrains Mono',monospace;font-size:3.4rem;font-weight:600;
+             background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .missed{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:16px 0 22px}
+  .missed span{background:#f8717118;border:1px solid #f8717144;color:#fca5a5;padding:4px 10px;border-radius:99px;font-size:.82rem}
+  footer{color:var(--muted);font-size:.75rem;text-align:center;margin-top:28px}
+  @media (max-width:560px){header{flex-direction:column;align-items:flex-start}.face{padding:22px}.card{min-height:240px}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="fx"></canvas>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Physics <span>Definitions</span></h1>
+      <div class="sub">Grade 10 · Paper 1 · type it word for word</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sDone">0/0</b><small>Card</small></div>
+      <div class="stat"><b id="sRight">0</b><small>Correct</small></div>
+      <div class="stat streak" id="streakBox"><b id="sStreak">0</b><small>Streak</small></div>
+    </div>
+  </header>
+
+  <div class="chips" id="chips">
+    <button class="chip on" data-set="all">All (17)</button>
+    <button class="chip" data-set="Kinematics">Kinematics</button>
+    <button class="chip" data-set="Electrostatics">Electrostatics</button>
+    <button class="chip" data-set="Electric Circuits">Electric Circuits</button>
+  </div>
+
+  <div class="progress"><i id="bar"></i></div>
+
+  <div id="game">
+    <div class="scene">
+      <div class="card" id="card">
+        <div class="face front">
+          <div class="tag" id="topic">Kinematics</div>
+          <div class="term" id="term">Vector</div>
+          <div class="prompt">Define this term.</div>
+          <div class="hintline hidden" id="hintline"></div>
+        </div>
+        <div class="face back">
+          <div class="verdict">
+            <div class="ring" id="ring"><span id="pct">0%</span></div>
+            <div><h3 id="vTitle">Nice</h3><p id="vSub"></p></div>
+          </div>
+          <div class="label">Definition</div>
+          <div class="answer" id="answer"></div>
+          <div class="alt" id="alt"></div>
+          <div class="label">You wrote</div>
+          <div class="yours" id="yours"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inputbox">
+      <textarea id="input" placeholder="Type the definition…" autocomplete="off" spellcheck="false"></textarea>
+    </div>
+    <div class="row">
+      <div class="hint" id="hint"><kbd>Enter</kbd> check · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>Alt</kbd>+<kbd>H</kbd> hint</div>
+      <button class="btn ghost" id="hintBtn">💡 First-letter hint</button>
+      <button class="btn ghost" id="skipBtn">I don't know</button>
+      <button class="btn ghost hidden" id="overrideBtn">Count it as correct</button>
+      <button class="btn primary" id="checkBtn">Check</button>
+      <button class="btn primary hidden" id="nextBtn">Next →</button>
+    </div>
+  </div>
+
+  <div id="end" class="hidden"></div>
+
+  <footer>Green = words you got · red = words you missed. Small words like "a" and "the" don't count against you.</footer>
+</div>
+
+<script>
+const CARDS = [
+  {t:"Vector", g:"Kinematics", a:["A physical quantity that has both magnitude and direction."]},
+  {t:"Scalar", g:"Kinematics", a:["A physical quantity that has magnitude only."]},
+  {t:"Resultant vector", g:"Kinematics", a:["The single vector which has the same effect as the original vectors acting together."]},
+  {t:"Distance", g:"Kinematics", a:["The length of the path travelled."]},
+  {t:"Displacement", g:"Kinematics", a:["A change in position."]},
+  {t:"Speed", g:"Kinematics", a:["The rate of change of distance."]},
+  {t:"Velocity", g:"Kinematics", a:["The rate of change of position.","The rate of displacement.","The rate of change of displacement."]},
+  {t:"Acceleration", g:"Kinematics", a:["The rate of change of velocity."]},
+  {t:"Position", g:"Kinematics", a:["A vector quantity that points from the reference point as the origin."]},
+  {t:"Law of conservation of charge", g:"Electrostatics", a:["The net charge of an isolated system remains constant during any physical process."]},
+  {t:"Potential difference", g:"Electric Circuits", a:["The work done per unit positive charge."]},
+  {t:"Current", g:"Electric Circuits", a:["The rate of flow of charge."]},
+  {t:"Ohm's Law", g:"Electric Circuits", a:["The current through a conductor is directly proportional to the potential difference across the conductor at constant temperature."]},
+  {t:"Resistance", g:"Electric Circuits", a:["A material's opposition to the flow of electric charge."]},
+  {t:"Power", g:"Electric Circuits", a:["The rate at which work is done.","The rate at which energy is transferred."], show:"The rate at which work is done or the rate at which energy is transferred."},
+  {t:"Electrical power", g:"Electric Circuits", a:["The product of the potential difference across the device and the current flowing through it."]},
+  {t:"emf", g:"Electric Circuits", a:["The total energy supplied per coulomb of charge by the cell."]},
+];
+
+const SOFT = new Set(["a","an","the"]);
+const norm = w => w.toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9']/g,"").replace(/'s$/,"s");
+const words = s => s.split(/\s+/).map(w=>({raw:w,n:norm(w)})).filter(w=>w.n);
+
+// LCS over significant words -> which answer words matched, which typed words matched
+function compare(answer, typed){
+  const A = words(answer), T = words(typed);
+  const ai = A.map((w,i)=>i).filter(i=>!SOFT.has(A[i].n));
+  const ti = T.map((w,i)=>i).filter(i=>!SOFT.has(T[i].n));
+  const n=ai.length, m=ti.length, dp=[...Array(n+1)].map(()=>new Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)
+    dp[i][j] = A[ai[i]].n===T[ti[j]].n ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j],dp[i][j+1]);
+  const hitA=new Set(), hitT=new Set(); let i=0,j=0;
+  while(i<n&&j<m){
+    if(A[ai[i]].n===T[ti[j]].n){hitA.add(ai[i]);hitT.add(ti[j]);i++;j++}
+    else if(dp[i+1][j]>=dp[i][j+1])i++; else j++;
+  }
+  const lcs=dp[0][0];
+  const recall = n? lcs/n : 0, precision = m? lcs/m : 0;
+  const score = Math.round(100 * (0.85*recall + 0.15*precision));
+  return {A,T,hitA,hitT,score,recall};
+}
+
+// ---------- state ----------
+let deck=[], idx=0, right=0, streak=0, missed=[], phase="ask", filter="all";
+const $ = id=>document.getElementById(id);
+const card=$("card"), input=$("input");
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function start(list){
+  deck = shuffle([...list]); idx=0; right=0; streak=0; missed=[];
+  $("game").classList.remove("hidden"); $("end").classList.add("hidden");
+  show(); updateStats();
+}
+function updateStats(){
+  $("sDone").textContent = `${Math.min(idx+1,deck.length)}/${deck.length}`;
+  $("sRight").textContent = right; $("sStreak").textContent = streak;
+  $("bar").style.width = (idx/deck.length*100)+"%";
+}
+function show(){
+  const c=deck[idx];
+  phase="ask";
+  card.classList.remove("flipped","leave");
+  $("topic").textContent=c.g; $("term").textContent=c.t;
+  input.value=""; input.disabled=false;
+  toggle(["checkBtn","skipBtn","hintBtn"],true); usedHint=false; $("hintline").classList.add("hidden"); $("hintline").innerHTML=""; toggle(["nextBtn","overrideBtn"],false);
+  $("hint").innerHTML='<kbd>Enter</kbd> check · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>Alt</kbd>+<kbd>H</kbd> hint';
+  void card.offsetWidth; card.classList.add("enter");
+  setTimeout(()=>card.classList.remove("enter"),600);
+  setTimeout(()=>input.focus(),50);
+  updateStats();
+}
+function toggle(ids,on){ids.forEach(id=>$(id).classList.toggle("hidden",!on))}
+
+function check(skip=false){
+  if(phase!=="ask")return;
+  const c=deck[idx], typed=skip?"":input.value.trim();
+  if(!skip && !typed){card.classList.add("shake");setTimeout(()=>card.classList.remove("shake"),500);return}
+  phase="shown";
+  // best matching accepted answer
+  let best=null, bestI=0;
+  c.a.forEach((ans,i)=>{const r=compare(ans,typed); if(!best||r.score>best.score){best=r;bestI=i}});
+  const s=best.score;
+  const level = s>=90?"good": s>=65?"close":"bad";
+  const col = {good:"var(--good)",close:"var(--close)",bad:"var(--bad)"}[level];
+
+  // render answer words
+  $("answer").innerHTML = best.A.map((w,i)=>{
+    const cls = SOFT.has(w.n)?"soft": best.hitA.has(i)?"hit":"miss";
+    return `<span class="w ${cls}" style="animation-delay:${.35+i*.04}s">${esc(w.raw)}</span>`;
+  }).join("");
+  const others=c.a.filter((_,i)=>i!==bestI);
+  $("alt").textContent = c.show ? `Full definition: ${c.show}` : others.length ? `Also accepted: ${others.join(" / ")}` : "";
+  $("yours").innerHTML = typed ? best.T.map((w,i)=>
+      SOFT.has(w.n)||best.hitT.has(i)?esc(w.raw):`<span class="extra">${esc(w.raw)}</span>`).join(" ")
+    : "<em style='color:var(--muted)'>(skipped)</em>";
+
+  const ring=$("ring"); ring.style.setProperty("--c",col); ring.style.setProperty("--p",0);
+  $("pct").textContent="0%";
+  requestAnimationFrame(()=>requestAnimationFrame(()=>ring.style.setProperty("--p",s)));
+  countUp($("pct"),s);
+
+  const titles={good:["Spot on!","Word perfect.","Nailed it."],close:["Almost there","So close","Nearly"],bad:["Not yet","Keep at it","Learn this one"]};
+  $("vTitle").textContent = skip?"Here it is": pick(titles[level]);
+  $("vTitle").style.color = col;
+  const missing=[...best.A.keys()].filter(i=>!SOFT.has(best.A[i].n)&&!best.hitA.has(i)).length;
+  $("vSub").textContent = skip?"Have a read, it'll come back later.":
+    level==="good"? (missing?`Missed ${missing} word${missing>1?"s":""}, close enough.`:"Every key word.") :
+    `${missing} key word${missing!==1?"s":""} missing.`;
+  if(usedHint && !skip) $("vSub").textContent += " (used a hint)";
+
+  card.classList.add("flipped");
+  input.disabled=true;
+  toggle(["checkBtn","skipBtn","hintBtn"],false); toggle(["nextBtn"],true);
+  toggle(["overrideBtn"], level!=="good" && !skip);
+  $("hint").innerHTML='<kbd>Enter</kbd> next card';
+
+  if(level==="good"){ mark(true); setTimeout(()=>burst(),450); }
+  else { mark(false); setTimeout(()=>{card.classList.add("shake");setTimeout(()=>card.classList.remove("shake"),500)},800); }
+  setTimeout(()=>$("nextBtn").focus(),100);
+}
+let lastCorrect=null;
+function mark(ok){
+  lastCorrect=ok;
+  if(ok){right++;streak++;bumpStreak()} else {streak=0;missed.push(deck[idx])}
+  updateStats();
+}
+function override(){
+  if(lastCorrect)return;
+  missed.pop(); right++; streak++; lastCorrect=true; bumpStreak(); updateStats();
+  $("vTitle").textContent="Counted as correct"; $("vTitle").style.color="var(--good)";
+  toggle(["overrideBtn"],false); burst();
+}
+function bumpStreak(){const b=$("streakBox");b.classList.remove("bump");void b.offsetWidth;b.classList.add("bump")}
+function next(){
+  if(phase!=="shown")return;
+  phase="moving";
+  card.classList.add("leave");
+  setTimeout(()=>{ idx++; if(idx>=deck.length) finish(); else show(); },340);
+}
+function finish(){
+  $("bar").style.width="100%";
+  $("game").classList.add("hidden");
+  const pct=Math.round(right/deck.length*100);
+  const end=$("end"); end.classList.remove("hidden");
+  end.innerHTML=`<div class="done">
+    <h2>${pct===100?"Perfect round!":pct>=75?"Great round":"Round done"}</h2>
+    <div class="big">${right}/${deck.length}</div>
+    ${missed.length?`<p style="color:var(--muted);margin-top:10px">Still to learn:</p>
+      <div class="missed">${missed.map(c=>`<span>${esc(c.t)}</span>`).join("")}</div>`:"<p style='color:var(--muted);margin:10px 0 22px'>You got every one.</p>"}
+    <div class="row" style="justify-content:center">
+      ${missed.length?`<button class="btn primary" id="redoMissed">Redo the ${missed.length} I missed</button>`:""}
+      <button class="btn ghost" id="redoAll">Start over</button>
+    </div></div>`;
+  const m=[...missed];
+  if(m.length)$("redoMissed").onclick=()=>start(m);
+  $("redoAll").onclick=()=>start(current());
+  if(pct>=75){burst(innerWidth/2,innerHeight/3,140);setTimeout(()=>burst(innerWidth/3,innerHeight/2,90),250);setTimeout(()=>burst(innerWidth*2/3,innerHeight/2,90),450)}
+}
+function current(){return filter==="all"?CARDS:CARDS.filter(c=>c.g===filter)}
+const pick=a=>a[Math.random()*a.length|0];
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function countUp(el,to){const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/1000);el.textContent=Math.round(to*(1-Math.pow(1-k,3)))+"%";if(k<1)requestAnimationFrame(f)})(t0)}
+
+let usedHint=false;
+function showHint(){
+  if(phase!=="ask"||usedHint)return;
+  usedHint=true;
+  const ans=deck[idx].a[0];
+  $("hintline").innerHTML = ans.split(/\s+/).map((w,i)=>{
+    const m=w.match(/^([A-Za-z0-9])(.*?)([.,;:]?)$/);
+    const body = m ? esc(m[1])+"<i>"+m[2].replace(/[A-Za-z0-9]/g,"_")+"</i>"+esc(m[3]) : esc(w);
+    return `<span class="w" style="animation-delay:${i*.05}s">${body}</span>`;
+  }).join("");
+  $("hintline").classList.remove("hidden");
+  toggle(["hintBtn"],false);
+  input.focus();
+}
+// ---------- events ----------
+$("hintBtn").onclick=showHint;
+document.addEventListener("keydown",e=>{if(e.altKey&&(e.code==="KeyH")){e.preventDefault();showHint()}});
+$("checkBtn").onclick=()=>check();
+$("skipBtn").onclick=()=>check(true);
+$("nextBtn").onclick=next;
+$("overrideBtn").onclick=override;
+input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();e.stopPropagation();check()}});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&phase==="shown"&&document.activeElement!==$("overrideBtn")){e.preventDefault();next()}});
+$("chips").addEventListener("click",e=>{
+  const b=e.target.closest(".chip"); if(!b)return;
+  document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b));
+  filter=b.dataset.set; start(current());
+});
+
+// ---------- background: drifting vector arrows ----------
+const bg=$("bg"), bx=bg.getContext("2d"); let arrows=[];
+function sizeBg(){bg.width=fx.width=innerWidth*devicePixelRatio;bg.height=fx.height=innerHeight*devicePixelRatio;
+  bx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);fxx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+function mkArrow(){const a=Math.random()*Math.PI*2,s=.15+Math.random()*.35;
+  return{x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:Math.cos(a)*s,vy:Math.sin(a)*s,len:10+Math.random()*26,
+         hue:Math.random()<.5?190:258,al:.12+Math.random()*.25}}
+function drawBg(){
+  bx.clearRect(0,0,innerWidth,innerHeight);
+  for(const p of arrows){
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<-40)p.x=innerWidth+40; if(p.x>innerWidth+40)p.x=-40;
+    if(p.y<-40)p.y=innerHeight+40; if(p.y>innerHeight+40)p.y=-40;
+    const ang=Math.atan2(p.vy,p.vx), ex=p.x+Math.cos(ang)*p.len, ey=p.y+Math.sin(ang)*p.len;
+    bx.strokeStyle=`hsla(${p.hue},90%,70%,${p.al})`;bx.lineWidth=1.4;
+    bx.beginPath();bx.moveTo(p.x,p.y);bx.lineTo(ex,ey);
+    bx.lineTo(ex-Math.cos(ang-.5)*6,ey-Math.sin(ang-.5)*6);bx.moveTo(ex,ey);
+    bx.lineTo(ex-Math.cos(ang+.5)*6,ey-Math.sin(ang+.5)*6);bx.stroke();
+  }
+  requestAnimationFrame(drawBg);
+}
+
+// ---------- fx: spark burst ----------
+const fx=$("fx"), fxx=fx.getContext("2d"); let parts=[], fxRunning=false;
+function burst(x,y,n=70){
+  const r=card.getBoundingClientRect(); x??=r.left+r.width/2; y??=r.top+r.height/2;
+  const cols=["#5ee1ff","#a78bfa","#4ade80","#facc15","#ffffff"];
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=3+Math.random()*7;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:1,c:pick(cols),sz:2+Math.random()*3,rot:Math.random()*6,vr:(Math.random()-.5)*.3})}
+  if(!fxRunning){fxRunning=true;requestAnimationFrame(tick)}
+}
+function tick(){
+  fxx.clearRect(0,0,innerWidth,innerHeight);
+  parts=parts.filter(p=>p.life>0);
+  for(const p of parts){p.vy+=.18;p.vx*=.985;p.x+=p.vx;p.y+=p.vy;p.life-=.012;p.rot+=p.vr;
+    fxx.save();fxx.globalAlpha=Math.max(0,p.life);fxx.fillStyle=p.c;fxx.translate(p.x,p.y);fxx.rotate(p.rot);
+    fxx.fillRect(-p.sz,-p.sz/2,p.sz*2,p.sz);fxx.restore()}
+  if(parts.length)requestAnimationFrame(tick); else {fxRunning=false;fxx.clearRect(0,0,innerWidth,innerHeight)}
+}
+
+addEventListener("resize",sizeBg);
+sizeBg(); arrows=Array.from({length:Math.min(70,innerWidth/18|0)},mkArrow); drawBg();
+start(CARDS);
+</script>
+</body>
+</html>
