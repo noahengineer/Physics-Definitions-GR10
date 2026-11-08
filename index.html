@@ -81,6 +81,9 @@
   @keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
   @keyframes shakeF{20%,60%{transform:rotateY(180deg) translateX(-10px)}40%,80%{transform:rotateY(180deg) translateX(10px)}}
 
+  .qline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .qline .label{margin:0}
+  .qline b{font-size:1.35rem;font-weight:700;letter-spacing:-.01em;background:linear-gradient(120deg,#fff 30%,var(--accent) 70%,var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
   .verdict{display:flex;align-items:center;gap:12px;margin-bottom:14px}
   .ring{--p:0;--c:var(--good);width:58px;height:58px;border-radius:50%;flex:none;
         background:conic-gradient(var(--c) calc(var(--p)*1%),#ffffff12 0);display:grid;place-items:center;
@@ -165,6 +168,7 @@
           <div class="hintline hidden" id="hintline"></div>
         </div>
         <div class="face back">
+          <div class="qline"><span class="label">Question</span><b id="termBack"></b></div>
           <div class="verdict">
             <div class="ring" id="ring"><span id="pct">0%</span></div>
             <div><h3 id="vTitle">Nice</h3><p id="vSub"></p></div>
@@ -260,7 +264,7 @@ function show(){
   const c=deck[idx];
   phase="ask";
   card.classList.remove("flipped","leave");
-  $("topic").textContent=c.g; $("term").textContent=c.t;
+  $("topic").textContent=c.g; $("term").textContent=c.t; $("termBack").textContent=c.t;
   input.value=""; input.disabled=false;
   toggle(["checkBtn","skipBtn","hintBtn"],true); usedHint=false; $("hintline").classList.add("hidden"); $("hintline").innerHTML=""; toggle(["nextBtn","overrideBtn"],false);
   $("hint").innerHTML='<kbd>Enter</kbd> check · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>Alt</kbd>+<kbd>H</kbd> hint';
